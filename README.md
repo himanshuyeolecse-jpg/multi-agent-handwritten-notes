@@ -46,9 +46,6 @@ Yes
 
 Clone the repository and install dependencies:
 
-//```bash
-git clone [https://github.com/YOUR_USERNAME/multi-agent-handwritten-notes.git](https://github.com/YOUR_USERNAME/multi-agent-handwritten-notes.git)
-cd multi-agent-handwritten-notes
 
 # Create and activate virtual environment
 python -m venv .venv
