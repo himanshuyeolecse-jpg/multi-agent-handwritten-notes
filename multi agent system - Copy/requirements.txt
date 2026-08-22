@@ -1,6 +1,0 @@
-python-dotenv
-playwright
-streamlit
-langchain
-langchain-openai
-langchain-community
