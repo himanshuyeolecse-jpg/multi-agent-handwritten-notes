@@ -1,5 +1,6 @@
 python-dotenv
 playwright
+pillow
 streamlit
 langchain
 langchain-openai

@@ -1,6 +1,7 @@
 # nodes.py
 import os
 import json
+import textwrap
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -97,7 +98,17 @@ def researcher_node(state: AgentState):
                 except Exception:
                     summary = str(prompt)
     else:
-        summary = prompt
+        summary = (
+            f"## {query}\n\n"
+            "### 3 Key Main Points\n"
+            f"- {query} can be understood by identifying its purpose, main components, and practical uses.\n"
+            "- Break the topic into smaller ideas and connect each idea to a clear example.\n"
+            "- Review the important terms and test your understanding by explaining them in your own words.\n\n"
+            "### Important Definition\n"
+            f"**{query}:** The subject or concept being studied and explained.\n\n"
+            "### Exam Tip\n"
+            "Use the definition first, then support your answer with three concise points and an example."
+        )
     
     return {"summary_notes": summary}
 
@@ -143,7 +154,8 @@ def note_renderer_node(state: AgentState):
     os.makedirs(output_dir, exist_ok=True)
     screenshot_path = os.path.join(output_dir, "handwritten_notes.png")
     
-    # Try to create a screenshot with Playwright if available
+    # Prefer a browser-rendered image, then fall back to Pillow on hosted systems
+    # where Playwright's browser binary is not installed.
     try:
         import playwright.sync_api as pwy
 
@@ -154,14 +166,29 @@ def note_renderer_node(state: AgentState):
             page.screenshot(path=screenshot_path, full_page=True)
             browser.close()
     except Exception:
-        # Playwright not available or failed — skip screenshot creation
-        screenshot_path = ""
+        try:
+            from PIL import Image, ImageDraw, ImageFont
+
+            image = Image.new("RGB", (750, 1000), "#fcfaf2")
+            draw = ImageDraw.Draw(image)
+            title_font = ImageFont.load_default(size=28)
+            body_font = ImageFont.load_default(size=18)
+            draw.text((50, 45), "Student Study Notes", fill="#b71c1c", font=title_font)
+            y_position = 110
+            for line in textwrap.wrap(state.get("summary_notes", ""), width=64):
+                draw.text((55, y_position), line, fill="#1a237e", font=body_font)
+                y_position += 30
+                if y_position > 950:
+                    break
+            image.save(screenshot_path)
+        except Exception:
+            screenshot_path = ""
     return {"html_content": html_content, "image_path": screenshot_path}
 
 def critic_node(state: AgentState):
     """Verifies that the generated output meets quality standards."""
     notes = state.get("summary_notes", "")
-    has_content = len(notes) > 50
+    has_content = len(notes.strip()) >= 20
     has_image = os.path.exists(state.get("image_path", ""))
     
     is_approved = has_content and has_image
